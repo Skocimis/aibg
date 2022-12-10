@@ -11,12 +11,17 @@ const RandomMovementAction = {
     },
     command: () => {
         let position = World.getPlayerPosition();
-        console.log(position);
+        //console.log(position);
         let destination = { q: 12, r: -9 };
-        let next = Teren.BogdanovBFS(position, destination);
-        console.log(next);
-        let resultAction = { type: "move", ...next }//(position.q == -13) ? { type: "move", q: -14, r: 7 } : { type: "move", q: -13, r: 6 };
-        console.log(resultAction);
+        let bfsRes = Teren.BogdanovBFS(position, destination);
+        if (!bfsRes) return { type: "move", ...position };
+        let next = bfsRes.sledeci;
+        let udaljenost = bfsRes.razdaljina;
+        console.log("UDALJ");
+        console.log(udaljenost);
+        let resultAction = { type: "move", ...next }
+        //(position.q == -13) ? { type: "move", q: -14, r: 7 } : { type: "move", q: -13, r: 6 };
+        //console.log(resultAction);
         return resultAction;
     }
 }

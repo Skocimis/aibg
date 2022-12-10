@@ -90,6 +90,7 @@ Teren.BogdanovBFS = function (start, end) {
             //NASLI, BEKTREK
             let kljuc = this.serialize(end);
             let pos = poseceni[kljuc]; // d, p
+            let razdaljina = pos.d;
             if (pos.p === null) return null;
             while (poseceni[pos.p].p != null) {
                 kljuc = pos.p;
@@ -102,7 +103,10 @@ Teren.BogdanovBFS = function (start, end) {
                     sc.push(ssusedi[i]);
                 }
                 if (this.serialize(ssusedi[i]) == kljuc) {
-                    return ssusedi[i];
+                    return {
+                        sledeci: ssusedi[i],
+                        razdaljina: razdaljina
+                    };
                 }
             }
             for (let i in sc) {
@@ -110,7 +114,10 @@ Teren.BogdanovBFS = function (start, end) {
                 let ds = this.deserialize(kljuc);
                 if (ds.q == komsijskiWormhole.q + sc[i].q - start.q &&
                     ds.r == komsijskiWormhole.r + sc[i].r - start.r) {
-                    return { q: sc[i].q, r: sc[i].r };
+                    return {
+                        sledeci: { q: sc[i].q, r: sc[i].r },
+                        razdaljina: razdaljina
+                    };
                 }
             }
             return null;
