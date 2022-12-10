@@ -8,6 +8,7 @@ World.load = function (data, bonus) {
 }
 
 World.update = function (data, bonus) {
+    console.log("ZOVEM UPDATE");
     if (!data.gameState) return;
     World.gameState = JSON.parse(data.gameState);
     if (bonus.playerIdx) {
@@ -18,6 +19,11 @@ World.getPlayerPosition = function () {
     if (!World.playerIdx) return null;
     let player = World.gameState["player" + World.playerIdx];
     return { q: player.q, r: player.r }
+}
+World.getPlayerLevel = function () {
+    if (!World.playerIdx) return null;
+    let player = World.gameState["player" + World.playerIdx];
+    return player.level;
 }
 World.getFieldByCoordinates = function (coordinates) {
     if (!coordinates || (!coordinates.r && coordinates.r !== 0) || (!coordinates.q && coordinates.q !== 0)) return null;
@@ -44,6 +50,17 @@ World.ucitajCrvotocine = function () {
         crvotocine[Teren.serialize(crvotocine2[i][1])] = crvotocine2[i][0]
     }
     return crvotocine;
+}
+World.getExperienceCoordinates = function () {
+    let tiles = World.gameState.map.tiles;
+    for (let i in tiles) {
+        for (let j in tiles[i]) {
+            if (tiles[i][j].entity.type == "EXPERIENCE") {
+                return { q: tiles[i][j].q, r: tiles[i][j].r };
+            }
+        }
+    }
+    return null;
 }
 
 export default World;

@@ -1,5 +1,5 @@
 export const SERVER_IP = "http://aibg2022.com:8081"
-export const USERNAME = "Miki"
+export const USERNAME = "Miki1"
 export const PASSWORD = "7@MHs&a+nK"
 
 export function sleep(ms) {
@@ -7,8 +7,10 @@ export function sleep(ms) {
         setTimeout(resolve, ms);
     });
 }
+let jwttoken = null;
 
 export async function getJWTToken() {
+    if (jwttoken) return jwttoken;
     let token = await fetch(SERVER_IP + "/user/login", {
         body: JSON.stringify({ username: USERNAME, password: PASSWORD }),
         headers: {
@@ -16,7 +18,8 @@ export async function getJWTToken() {
         },
         method: "POST"
     });
-    return (await token.json()).token;
+    jwttoken = (await token.json()).token;
+    return jwttoken;
 }
 
 export async function startGame(pozicija, mapa, minuti) {
@@ -78,14 +81,19 @@ function parseAction(action) {
     if (action.type == "move") {
         return "move," + action.q + "," + action.r;
     }
+    if (action.type == "attack") {
+        return "attack," + action.q + "," + action.r;
+    }
 }
 
 export async function doActionTest(action) {
     let actionString = parseAction(action);
 
     let gotov = undefined;
+    console.log("ACTION TEST");
     while (!gotov) {
-
+        console.log("NIJE GOTOV");
+        await sleep(100);
         let akcijaRezultat = await fetch(SERVER_IP + "/game/actionTrain", {
             headers: {
                 "Content-Type": 'application/json',
@@ -93,8 +101,16 @@ export async function doActionTest(action) {
             },
             method: "POST",
             body: JSON.stringify({ action: actionString })
+        }).catch((e) => {
+            console.log("ERROOORRRRR")
+            console.error(e);
         });
+        console.log("STIGAO AKCIJAREZULTAT")
         gotov = await akcijaRezultat.json();
+    }
+    console.log(Object.keys(gotov));
+    if (gotov.message) {
+        console.log(gotov.message);
     }
     return gotov;
 }

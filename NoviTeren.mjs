@@ -86,15 +86,28 @@ Teren.BogdanovBFS = function (start, end) {
     while (queue.length > 0) {
         let element = queue.shift();
         if (end.r == element.r && end.q == element.q) {
-            console.log("NASLI " + element.q + ", " + element.r);
-            //NASLI, BEKTREK
+            let naleteonaasteroid = 0; //Logika stavi se na 3 kad naidje na asteroid(brojac se smanjuje svakim potezom) ako je 0 ne napada asteroid jer je van dometa
+            let kamen = null;
             let kljuc = this.serialize(end);
             let pos = poseceni[kljuc]; // d, p
             let razdaljina = pos.d;
             if (pos.p === null) return null;
             while (poseceni[pos.p].p != null) {
+                if (naleteonaasteroid > 0)
+                    naleteonaasteroid--;
+
+                if (World.getFieldByCoordinates(this.deserialize(kljuc)).entity.type == "ASTEROID") {
+                    naleteonaasteroid = 2;
+                    kamen = kljuc;
+                }
                 kljuc = pos.p;
                 pos = poseceni[pos.p];
+            }
+            if (naleteonaasteroid != 0) {
+                return {
+                    napad: true,
+                    kamen: this.deserialize(kamen)
+                }
             }
             let ssusedi = Teren.susedi(start);
             let sc = [];
@@ -127,8 +140,36 @@ Teren.BogdanovBFS = function (start, end) {
         //Ako je sused crvotocine ima jos jednog suseda'
         for (let i = 0; i < susedi.length; i++) {
             let sused = World.getFieldByCoordinates(susedi[i]);
-            if (sused.tileType == "FULL") continue; //Kroz asteroid
+            if (sused.tileType == "FULL") {
+                if (sused.entity.type == "ASTEROID") {
+                    let unistiateroid = Math.ceil(350 / (100 + 50 * World.getPlayerLevel()));//Racuna vreme potrebno da se unisti asteroid
+                    //console.log("UNISTIASTEROID " + unistiateroid);
+
+                    if (!poseceni[this.serialize(susedi[i])]) {
+                        poseceni[this.serialize(susedi[i])] = { d: poseceni[this.serialize(element)].d + 1 + unistiateroid, p: this.serialize(element) };
+                        queue.push(susedi[i]);
+                    }
+                    else {
+                        if (poseceni[this.serialize(element)].d + 1 + unistiateroid < poseceni[this.serialize(susedi[i])].d) {
+                            poseceni[this.serialize(susedi[i])] = { d: Teren.serialize(element).d + 1 + unistiateroid, p: this.serialize(element) }
+                        }
+                    }
+                    continue;
+                }
+                else
+                    continue;
+            }
             if (sused.entity.type == "BLACKHOLE") continue; //2
+            let pp = false;
+            for (let j = 1; j <= 4; j++) {
+                if (i == World.playerIdx) continue;
+                if (susedi[i].q == World.gameState["player" + j].q
+                    && susedi[i].r == World.gameState["player" + j].r) {
+                    pp = true;
+                    break;
+                }
+            }
+            if (pp) continue;
             if (sused.entity.type == "WORMHOLE") {
                 let komsijskiWormhole = World.crvotocine[this.serialize(sused)];
                 susedi[i] = {
@@ -144,7 +185,137 @@ Teren.BogdanovBFS = function (start, end) {
             }
             else {
                 if (poseceni[this.serialize(element)].d + 1 < poseceni[this.serialize(susedi[i])].d) {
-                    poseceni[this.serialize(susedi[i])].d = { d: poseceni.get(element).d + 1, p: this.serialize(element) }
+                    poseceni[this.serialize(susedi[i])] = { d: poseceni[this.serialize(element)].d + 1, p: this.serialize(element) }
+                }
+            }
+        }
+    }
+    console.log("IZASLI IZ WHILEA");
+    return null;
+}
+
+Teren.BogdanovBFSBoss = function (start, end) {
+    let poseceni = {};
+    console.log("POCEO");
+    let queue = [];
+    poseceni[this.serialize(start)] = { d: 0, p: null };
+    queue.push(start);
+    while (queue.length > 0) {
+        queue.sort((a, b) => {
+            let ati = poseceni[this.serialize(a)];
+            let bti = poseceni[this.serialize(b)];
+            if (this.udaljenost(start, a) < this.udaljenost(start, b)) {
+                return -1;
+            }
+            else if (this.udaljenost(start, a) > this.udaljenost(start, b)) {
+                return 1
+            }
+            //console.log(ati);
+            //console.log(bti)
+            //if (ati.d < bti.d) return -1;
+            //if (ati.d > bti.d) return 1;
+            return 0;
+        })
+        let element = queue.shift();
+        if (end.r == element.r && end.q == element.q) {
+            let naleteonaasteroid = 0; //Logika stavi se na 3 kad naidje na asteroid(brojac se smanjuje svakim potezom) ako je 0 ne napada asteroid jer je van dometa
+            let kamen = null;
+            let kljuc = this.serialize(end);
+            let pos = poseceni[kljuc]; // d, p
+            let razdaljina = pos.d;
+            if (pos.p === null) return null;
+            while (poseceni[pos.p].p != null) {
+                if (naleteonaasteroid > 0)
+                    naleteonaasteroid--;
+
+                if (World.getFieldByCoordinates(this.deserialize(kljuc)).entity.type == "ASTEROID") {
+                    naleteonaasteroid = 2;
+                    kamen = kljuc;
+                }
+                kljuc = pos.p;
+                pos = poseceni[pos.p];
+            }
+            if (naleteonaasteroid != 0) {
+                return {
+                    napad: true,
+                    kamen: this.deserialize(kamen)
+                }
+            }
+            let ssusedi = Teren.susedi(start);
+            let sc = [];
+            for (let i in ssusedi) {
+                if (World.getFieldByCoordinates(ssusedi[i]).entity.type == "WORMHOLE") {
+                    sc.push(ssusedi[i]);
+                }
+                if (this.serialize(ssusedi[i]) == kljuc) {
+                    return {
+                        sledeci: ssusedi[i],
+                        razdaljina: razdaljina
+                    };
+                }
+            }
+            for (let i in sc) {
+                let komsijskiWormhole = World.crvotocine[this.serialize(sc[i])];
+                let ds = this.deserialize(kljuc);
+                if (ds.q == komsijskiWormhole.q + sc[i].q - start.q &&
+                    ds.r == komsijskiWormhole.r + sc[i].r - start.r) {
+                    return {
+                        sledeci: { q: sc[i].q, r: sc[i].r },
+                        razdaljina: razdaljina
+                    };
+                }
+            }
+            return null;
+            //break;
+        }
+        let susedi = Teren.susedi(element); //getfieldbycoordinates suseda
+        //Ako je sused crvotocine ima jos jednog suseda'
+        for (let i = 0; i < susedi.length; i++) {
+            let sused = World.getFieldByCoordinates(susedi[i]);
+            if (sused.tileType == "FULL") {
+                if (sused.entity.type == "ASTEROID") {
+                    let unistiateroid = Math.ceil(350 / (100 + 50 * World.getPlayerLevel()));//Racuna vreme potrebno da se unisti asteroid
+                    //console.log("UNISTIASTEROID " + unistiateroid);
+
+                    if (!poseceni[this.serialize(susedi[i])]) {
+                        poseceni[this.serialize(susedi[i])] = { d: poseceni[this.serialize(element)].d + 1 + unistiateroid, p: this.serialize(element) };
+                        queue.push(susedi[i]);
+                    }
+                    else {
+                        if (poseceni[this.serialize(element)].d + 1 + unistiateroid < poseceni[this.serialize(susedi[i])].d) {
+                            poseceni[this.serialize(susedi[i])] = { d: Teren.serialize(element).d + 1 + unistiateroid, p: this.serialize(element) }
+                        }
+                    }
+                    continue;
+                }
+            }
+            if (sused.entity.type == "BLACKHOLE") continue; //2
+            let pp = false;
+            for (let j = 1; j <= 4; j++) {
+                if (i == World.playerIdx) continue;
+                if (susedi[i].q == World.gameState["player" + j].q
+                    && susedi[i].r == World.gameState["player" + j].r) {
+                    pp = true;
+                    break;
+                }
+            }
+            if (pp) continue;
+            if (sused.entity.type == "WORMHOLE") {
+                let komsijskiWormhole = World.crvotocine[this.serialize(sused)];
+                susedi[i] = {
+                    q: komsijskiWormhole.q + sused.q - element.q,
+                    r: komsijskiWormhole.r + sused.r - element.r
+                }
+                i--;
+                continue;
+            }; //sused
+            if (!poseceni[this.serialize(susedi[i])]) {
+                poseceni[this.serialize(susedi[i])] = { d: poseceni[this.serialize(element)].d + 1, p: this.serialize(element) };
+                queue.push(susedi[i]);
+            }
+            else {
+                if (poseceni[this.serialize(element)].d + 1 < poseceni[this.serialize(susedi[i])].d) {
+                    poseceni[this.serialize(susedi[i])] = { d: poseceni[this.serialize(element)].d + 1, p: this.serialize(element) }
                 }
             }
         }

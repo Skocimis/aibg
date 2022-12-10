@@ -1,8 +1,8 @@
 import World from "../World.mjs"
 import Teren from "../NoviTeren.mjs";
 
-const id = "random_movement";
-const RandomMovementAction = {
+const id = "move_to_xp";
+const MoveToXPAction = {
     id: id,
     params: {
         param1: () => {
@@ -10,19 +10,17 @@ const RandomMovementAction = {
         }
     },
     command: () => {
-        let position = World.getPlayerPosition();
-        //console.log(position);
-        let destination = { q: 12, r: -9 };
-        let bfsRes = Teren.BogdanovBFS(position, destination);
+        let bfsRes = Teren.BogdanovBFS(World.getPlayerPosition(), World.getExperienceCoordinates());
         if (!bfsRes) return { type: "move", ...position };
+        if (bfsRes.napad) {
+            return { type: "attack", ...bfsRes.kamen };
+        }
         let next = bfsRes.sledeci;
         let udaljenost = bfsRes.razdaljina;
-        console.log("UDALJ");
-        console.log(udaljenost);
         let resultAction = { type: "move", ...next }
         //(position.q == -13) ? { type: "move", q: -14, r: 7 } : { type: "move", q: -13, r: 6 };
         //console.log(resultAction);
         return resultAction;
     }
 }
-export default RandomMovementAction;
+export default MoveToXPAction;
