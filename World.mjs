@@ -8,7 +8,7 @@ World.load = function (data, bonus) {
 }
 
 World.update = function (data, bonus) {
-    console.log("ZOVEM UPDATE");
+    //console.log("ZOVEM UPDATE");
     if (!data.gameState) return;
     World.gameState = JSON.parse(data.gameState);
     if (bonus.playerIdx) {
@@ -42,7 +42,6 @@ World.ucitajCrvotocine = function () {
                 if (!crvotocine2[tiles[i][j].entity.id])
                     crvotocine2[tiles[i][j].entity.id] = [];
                 crvotocine2[tiles[i][j].entity.id].push({ q: tiles[i][j].q, r: tiles[i][j].r });
-
             }
     let crvotocine = {};
     for (let i in crvotocine2) {

@@ -13,7 +13,9 @@ Teren.poljePostoji = function (polje, duzina = Teren.DUZINA) {
     return Math.max(Math.max(Math.abs(polje.q), Math.abs(polje.r)), Math.abs(s)) <= Math.floor(duzina / 2);
 }
 Teren.putuj = function (pocetak, smer, duzina = 1) {
-    if (!Teren.poljePostoji(pocetak)) return null;
+    if (!Teren.poljePostoji(pocetak)) {
+        return null;
+    }
     if (smer == "e")  //q+
         return { q: pocetak.q + duzina, r: pocetak.r };
     else if (smer == "se")  //r+
@@ -26,7 +28,8 @@ Teren.putuj = function (pocetak, smer, duzina = 1) {
         return { q: pocetak.q, r: pocetak.r - duzina };
     else if (smer == "ne")  //q+r-
         return { q: pocetak.q + duzina, r: pocetak.r - duzina };
-    else return null;
+    else
+        return null;
 }
 Teren.susedi = function (polje) {
     if (!Teren.poljePostoji(polje)) return null;
@@ -79,10 +82,8 @@ Teren.deserialize = function (polje) {
 }
 Teren.BogdanovBFS = function (start, end) {
     let poseceni = {};
-    console.log("POCEO");
     let queue = [];
     poseceni[this.serialize(start)] = { d: 0, p: null };
-    queue.push(start);
     while (queue.length > 0) {
         let element = queue.shift();
         if (end.r == element.r && end.q == element.q) {
@@ -106,7 +107,8 @@ Teren.BogdanovBFS = function (start, end) {
             if (naleteonaasteroid != 0) {
                 return {
                     napad: true,
-                    kamen: this.deserialize(kamen)
+                    kamen: this.deserialize(kamen),
+                    razdaljina: razdaljina
                 }
             }
             let ssusedi = Teren.susedi(start);
@@ -148,10 +150,11 @@ Teren.BogdanovBFS = function (start, end) {
                     if (!poseceni[this.serialize(susedi[i])]) {
                         poseceni[this.serialize(susedi[i])] = { d: poseceni[this.serialize(element)].d + 1 + unistiateroid, p: this.serialize(element) };
                         queue.push(susedi[i]);
+                        queue.sort();
                     }
                     else {
                         if (poseceni[this.serialize(element)].d + 1 + unistiateroid < poseceni[this.serialize(susedi[i])].d) {
-                            poseceni[this.serialize(susedi[i])] = { d: Teren.serialize(element).d + 1 + unistiateroid, p: this.serialize(element) }
+                            poseceni[this.serialize(susedi[i])] = { d: poseceni[Teren.serialize(element)].d + 1 + unistiateroid, p: this.serialize(element) }
                         }
                     }
                     continue;
@@ -182,6 +185,7 @@ Teren.BogdanovBFS = function (start, end) {
             if (!poseceni[this.serialize(susedi[i])]) {
                 poseceni[this.serialize(susedi[i])] = { d: poseceni[this.serialize(element)].d + 1, p: this.serialize(element) };
                 queue.push(susedi[i]);
+                queue.sort();
             }
             else {
                 if (poseceni[this.serialize(element)].d + 1 < poseceni[this.serialize(susedi[i])].d) {
@@ -190,30 +194,47 @@ Teren.BogdanovBFS = function (start, end) {
             }
         }
     }
-    console.log("IZASLI IZ WHILEA");
     return null;
 }
 
 Teren.BogdanovBFSBoss = function (start, end) {
     let poseceni = {};
-    console.log("POCEO");
     let queue = [];
     poseceni[this.serialize(start)] = { d: 0, p: null };
     queue.push(start);
     while (queue.length > 0) {
         queue.sort((a, b) => {
-            let ati = poseceni[this.serialize(a)];
-            let bti = poseceni[this.serialize(b)];
-            if (this.udaljenost(start, a) < this.udaljenost(start, b)) {
+            if (poseceni[this.serialize(a)].d < poseceni[this.serialize(b)].d) {
                 return -1;
             }
-            else if (this.udaljenost(start, a) > this.udaljenost(start, b)) {
-                return 1
+            if (poseceni[this.serialize(a)].d > poseceni[this.serialize(b)].d) {
+                return 1;
             }
-            //console.log(ati);
-            //console.log(bti)
-            //if (ati.d < bti.d) return -1;
-            //if (ati.d > bti.d) return 1;
+            let mikiPoz = World.getPlayerPosition();
+            let hanterId = 0;
+            let hanterDistance = 50;
+            for (let i = 1; i < 4; i++) {
+                if (i == World.playerIdx) continue;
+                let ud = Teren.udaljenost(mikiPoz, World.gameState["player" + i]);
+                //console.log(mikiPoz);
+                //console.log(World.gameState["player" + i]);
+                //console.log(ud);
+                if (ud < hanterDistance) {
+                    hanterDistance = ud;
+                    hanterId = i;
+                }
+            }
+            //console.log("HANTER JE " + hanterId);
+            //console.log("UDALJENOST " + hanterDistance);
+            let aud = Teren.udaljenost(World.gameState["player" + hanterId], a);
+            let bud = Teren.udaljenost(World.gameState["player" + hanterId], b);
+            //console.log("AUD");
+            //console.log(aud);
+            //console.log(bud);
+            if (aud > bud)
+                return -1;
+            if (aud < bud)
+                return 1;
             return 0;
         })
         let element = queue.shift();
@@ -223,6 +244,7 @@ Teren.BogdanovBFSBoss = function (start, end) {
             let kljuc = this.serialize(end);
             let pos = poseceni[kljuc]; // d, p
             let razdaljina = pos.d;
+            let niz = [];
             if (pos.p === null) return null;
             while (poseceni[pos.p].p != null) {
                 if (naleteonaasteroid > 0)
@@ -232,13 +254,18 @@ Teren.BogdanovBFSBoss = function (start, end) {
                     naleteonaasteroid = 2;
                     kamen = kljuc;
                 }
+                niz.push(pos);
                 kljuc = pos.p;
                 pos = poseceni[pos.p];
             }
-            if (naleteonaasteroid != 0) {
+            niz.push(pos);
+            niz.reverse()
+            //console.log(niz)
+            if (naleteonaasteroid != 0 && ((Teren.udaljenost(World.getPlayerPosition(), { q: 0, r: 0 }) != 8) || (Teren.udaljenost(World.getPlayerPosition(), this.deserialize(kamen)) <= 1))) {
                 return {
                     napad: true,
-                    kamen: this.deserialize(kamen)
+                    kamen: this.deserialize(kamen),
+                    razdaljina: razdaljina
                 }
             }
             let ssusedi = Teren.susedi(start);
@@ -274,7 +301,7 @@ Teren.BogdanovBFSBoss = function (start, end) {
             let sused = World.getFieldByCoordinates(susedi[i]);
             if (sused.tileType == "FULL") {
                 if (sused.entity.type == "ASTEROID") {
-                    let unistiateroid = Math.ceil(350 / (100 + 50 * World.getPlayerLevel()));//Racuna vreme potrebno da se unisti asteroid
+                    let unistiateroid = 0//Math.ceil(350 / (100 + 50 * World.getPlayerLevel()));//Racuna vreme potrebno da se unisti asteroid
                     //console.log("UNISTIASTEROID " + unistiateroid);
 
                     if (!poseceni[this.serialize(susedi[i])]) {
@@ -283,7 +310,7 @@ Teren.BogdanovBFSBoss = function (start, end) {
                     }
                     else {
                         if (poseceni[this.serialize(element)].d + 1 + unistiateroid < poseceni[this.serialize(susedi[i])].d) {
-                            poseceni[this.serialize(susedi[i])] = { d: Teren.serialize(element).d + 1 + unistiateroid, p: this.serialize(element) }
+                            poseceni[this.serialize(susedi[i])] = { d: poseceni[Teren.serialize(element)].d + 1 + unistiateroid, p: this.serialize(element) }
                         }
                     }
                     continue;
@@ -323,7 +350,32 @@ Teren.BogdanovBFSBoss = function (start, end) {
     console.log("IZASLI IZ WHILEA");
     return null;
 }
+Teren.prsten = function (duzina) {
+    let pocetak = { r: 0, q: 0 };
+    pocetak = Teren.putuj({ r: 0, q: 0 }, "sw", duzina);
+    let niz = [pocetak];
+    for (let i = 0; i < duzina; i++) {
+        niz.push(Teren.putuj(niz[niz.length - 1], "e", 1));
+    }
+    for (let i = 0; i < duzina; i++) {
+        niz.push(Teren.putuj(niz[niz.length - 1], "ne", 1));
+    }
+    for (let i = 0; i < duzina; i++) {
+        niz.push(Teren.putuj(niz[niz.length - 1], "nw", 1));
+    }
+    for (let i = 0; i < duzina; i++) {
+        niz.push(Teren.putuj(niz[niz.length - 1], "w", 1));
+    }
+    for (let i = 0; i < duzina; i++) {
+        niz.push(Teren.putuj(niz[niz.length - 1], "sw", 1));
+    }
+    for (let i = 0; i < duzina - 1; i++) {
+        niz.push(Teren.putuj(niz[niz.length - 1], "se", 1));
+    }
+    return niz;
+}
 
-console.log(Teren.susedi({ q: 14, r: -14 }));
-console.log(Teren.udaljenost({ q: -4, r: 1 }, { q: -3, r: -4 }))
+//console.log(Teren.susedi({ q: 14, r: -14 }));
+//console.log(Teren.udaljenost({ q: -4, r: 1 }, { q: -3, r: -4 }))
+//console.log()
 export default Teren;

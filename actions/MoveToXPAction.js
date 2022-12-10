@@ -10,7 +10,8 @@ const MoveToXPAction = {
         }
     },
     command: () => {
-        let bfsRes = Teren.BogdanovBFS(World.getPlayerPosition(), World.getExperienceCoordinates());
+        //console.log(World.getExperienceCoordinates());
+        let bfsRes = Teren.BogdanovBFSBoss(World.getPlayerPosition(), World.getExperienceCoordinates());
         if (!bfsRes) return { type: "move", ...position };
         if (bfsRes.napad) {
             return { type: "attack", ...bfsRes.kamen };

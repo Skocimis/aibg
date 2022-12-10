@@ -1,6 +1,6 @@
 import AttackBossAction from "./actions/AttackBossAction.js";
 import MoveToXPAction from "./actions/MoveToXPAction.js";
-
+import SelfDefenceAction from "./actions/SelfDefence.js";
 const Agent = {}
 // [AttackAction.id, HideAction.id]
 const DEBUG_UTILITIES = false;
@@ -63,7 +63,7 @@ Agent.utility = function (action) {
 }
 
 Agent.actions = {};
-let actionArray = [AttackBossAction];
+let actionArray = [AttackBossAction, SelfDefenceAction];
 for (let i in actionArray) {
     Agent.actions[actionArray[i].id] = actionArray[i];
 }
